@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Game Checklist</title>
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        min-height: 100vh;
+        font-family: Arial, sans-serif;
+        background: #111;
+        color: white;
+        padding: 30px 15px;
+    }
+
+    .container {
+        max-width: 750px;
+        margin: auto;
+    }
+
+    h1 {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .game-list {
+        background: #1c1c1c;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #333;
+    }
+
+    .game {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 15px 18px;
+        border-bottom: 1px solid #333;
+        transition: background 0.2s;
+    }
+
+    .game:last-child {
+        border-bottom: none;
+    }
+
+    .game:hover {
+        background: #282828;
+    }
+
+    .game input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        flex-shrink: 0;
+    }
+
+    .game a {
+        color: white;
+        text-decoration: none;
+        font-size: 17px;
+        flex: 1;
+    }
+
+    .game a:hover {
+        text-decoration: underline;
+    }
+
+    .game.completed a {
+        color: #888;
+        text-decoration: line-through;
+    }
+
+    .notes-section,
+    .export-section {
+        margin-top: 25px;
+        background: #1c1c1c;
+        padding: 20px;
+        border-radius: 12px;
+        border: 1px solid #333;
+    }
+
+    h2 {
+        margin-top: 0;
+        font-size: 20px;
+    }
+
+    .optional {
+        color: #999;
+        font-size: 14px;
+        font-weight: normal;
+    }
+
+    textarea,
+    input[type="text"] {
+        width: 100%;
+        background: #111;
+        color: white;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 12px;
+        font-family: monospace;
+        margin-top: 10px;
+    }
+
+    textarea {
+        min-height: 140px;
+        resize: vertical;
+        font-family: Arial, sans-serif;
+    }
+
+    button {
+        margin-top: 10px;
+        padding: 11px 18px;
+        border: none;
+        border-radius: 8px;
+        background: #4caf50;
+        color: white;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+
+    button:hover {
+        filter: brightness(1.1);
+    }
+
+    .import-button {
+        background: #2196f3;
+    }
+
+    .status {
+        display: block;
+        margin-top: 10px;
+        color: #aaa;
+        min-height: 20px;
+        font-size: 14px;
+    }
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Game Checklist</h1>
+
+    <div class="game-list" id="gameList"></div>
+
+    <div class="notes-section">
+        <h2>
+            Notes
+            <span class="optional">(Optional)</span>
+        </h2>
+
+        <textarea
+            id="notes"
+            placeholder="Write any optional notes here..."
+        ></textarea>
+    </div>
+
+    <div class="export-section">
+        <h2>Export Code</h2>
+
+        <input
+            type="text"
+            id="exportCode"
+            readonly
+            placeholder="Your export code will appear here..."
+        >
+
+        <button id="exportButton">
+            Generate & Copy Export Code
+        </button>
+
+        <span class="status" id="exportStatus"></span>
+    </div>
+
+    <div class="export-section">
+        <h2>Import Code</h2>
+
+        <input
+            type="text"
+            id="importCode"
+            placeholder="Paste an export code here..."
+        >
+
+        <button class="import-button" id="importButton">
+            Import Code
+        </button>
+
+        <span class="status" id="importStatus"></span>
+    </div>
+
+</div>
+
+<script>
+
+const games = [
+    {
+        name: "papas-pancake",
+        url: "https://schoolflashcards5.github.io/papas-pancake/"
+    },
+    {
+        name: "ducklife4",
+        url: "https://schoolflashcards5.github.io/ducklife4/"
+    },
+    {
+        name: "papas-sushi",
+        url: "https://schoolflashcards5.github.io/papas-sushi/"
+    },
+    {
+        name: "papas-scoop",
+        url: "https://schoolflashcards5.github.io/papas-scoop/"
+    },
+    {
+        name: "papas-bake",
+        url: "https://schoolflashcards5.github.io/papas-bake/"
+    },
+    {
+        name: "papas-wing",
+        url: "https://schoolflashcards5.github.io/papas-wing/"
+    },
+    {
+        name: "papas-pasta",
+        url: "https://schoolflashcards5.github.io/papas-pasta/"
+    },
+    {
+        name: "papas-hotdog",
+        url: "https://schoolflashcards5.github.io/papas-hotdog/"
+    },
+    {
+        name: "papas-cupcake",
+        url: "https://schoolflashcards5.github.io/papas-cupcake/"
+    },
+    {
+        name: "papas-cheese",
+        url: "https://schoolflashcards5.github.io/papas-cheese/"
+    },
+    {
+        name: "ducklife-3",
+        url: "https://schoolflashcards5.github.io/ducklife-3/"
+    },
+    {
+        name: "stair-race-3d",
+        url: "https://schoolflashcards5.github.io/stair-race-3d/"
+    },
+    {
+        name: "papaspizzaria",
+        url: "https://schoolflashcards5.github.io/papaspizzaria/"
+    },
+    {
+        name: "papasburgeria",
+        url: "https://schoolflashcards5.github.io/papasburgeria/"
+    },
+    {
+        name: "papas-taco",
+        url: "https://schoolflashcards5.github.io/papas-taco/"
+    },
+    {
+        name: "papas-freeze",
+        url: "https://schoolflashcards5.github.io/papas-freeze/"
+    },
+    {
+        name: "papas-donut",
+        url: "https://schoolflashcards5.github.io/papas-donut/"
+    },
+    {
+        name: "idle-mining",
+        url: "https://schoolflashcards5.github.io/idle-mining/"
+    },
+    {
+        name: "ducklife-2",
+        url: "https://schoolflashcards5.github.io/ducklife-2/"
+    },
+    {
+        name: "ducklife",
+        url: "https://schoolflashcards5.github.io/ducklife/"
+    }
+];
+
+
+const STORAGE_KEY = "gameChecklistData";
+
+let savedData = {
+    checked: [],
+    notes: ""
+};
+
+
+function loadData() {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+
+        if (stored) {
+            savedData = JSON.parse(stored);
+        }
+
+        if (!Array.isArray(savedData.checked)) {
+            savedData.checked = [];
+        }
+
+        if (typeof savedData.notes !== "string") {
+            savedData.notes = "";
+        }
+
+    } catch (error) {
+        console.error("Could not load saved data:", error);
+    }
+}
+
+
+function saveData() {
+    const checked = [];
+
+    document.querySelectorAll(".game-checkbox").forEach((checkbox) => {
+        if (checkbox.checked) {
+            checked.push(checkbox.dataset.game);
+        }
+    });
+
+    const data = {
+        checked: checked,
+        notes: document.getElementById("notes").value
+    };
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+
+    savedData = data;
+}
+
+
+function renderGames() {
+
+    const gameList = document.getElementById("gameList");
+
+    gameList.innerHTML = "";
+
+    games.forEach((game) => {
+
+        const gameRow = document.createElement("div");
+        gameRow.className = "game";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "game-checkbox";
+        checkbox.dataset.game = game.name;
+
+        checkbox.checked = savedData.checked.includes(game.name);
+
+        if (checkbox.checked) {
+            gameRow.classList.add("completed");
+        }
+
+        checkbox.addEventListener("change", () => {
+
+            gameRow.classList.toggle(
+                "completed",
+                checkbox.checked
+            );
+
+            saveData();
+        });
+
+
+        const link = document.createElement("a");
+
+        link.href = game.url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+
+        link.textContent = game.name;
+
+
+        gameRow.appendChild(checkbox);
+        gameRow.appendChild(link);
+
+        gameList.appendChild(gameRow);
+    });
+}
+
+
+document.getElementById("notes").addEventListener("input", () => {
+    saveData();
+});
+
+
+document.getElementById("exportButton").addEventListener("click", async () => {
+
+    saveData();
+
+    const exportData = {
+        checked: savedData.checked,
+        notes: savedData.notes
+    };
+
+    const code = btoa(
+        unescape(
+            encodeURIComponent(
+                JSON.stringify(exportData)
+            )
+        )
+    );
+
+    document.getElementById("exportCode").value = code;
+
+    try {
+
+        await navigator.clipboard.writeText(code);
+
+        document.getElementById("exportStatus").textContent =
+            "Export code copied to clipboard!";
+
+    } catch (error) {
+
+        document.getElementById("exportStatus").textContent =
+            "Export code generated. Copy it manually.";
+
+    }
+
+});
+
+
+document.getElementById("importButton").addEventListener("click", () => {
+
+    const code = document
+        .getElementById("importCode")
+        .value
+        .trim();
+
+    const status = document.getElementById("importStatus");
+
+    if (!code) {
+
+        status.textContent = "Please paste an export code first.";
+
+        return;
+    }
+
+    try {
+
+        const importedData = JSON.parse(
+            decodeURIComponent(
+                escape(
+                    atob(code)
+                )
+            )
+        );
+
+
+        if (
+            !importedData ||
+            !Array.isArray(importedData.checked)
+        ) {
+            throw new Error("Invalid data");
+        }
+
+
+        savedData = {
+            checked: importedData.checked.filter((gameName) =>
+                games.some((game) => game.name === gameName)
+            ),
+
+            notes:
+                typeof importedData.notes === "string"
+                    ? importedData.notes
+                    : ""
+        };
+
+
+        localStorage.setItem(
+            STORAGE_KEY,
+            JSON.stringify(savedData)
+        );
+
+
+        document.getElementById("notes").value =
+            savedData.notes;
+
+
+        renderGames();
+
+
+        status.textContent =
+            "Import successful! Your games and notes were restored.";
+
+    } catch (error) {
+
+        console.error(error);
+
+        status.textContent =
+            "Invalid import code.";
+
+    }
+
+});
+
+
+loadData();
+
+document.getElementById("notes").value = savedData.notes;
+
+renderGames();
+
+</script>
+
+</body>
+</html>
