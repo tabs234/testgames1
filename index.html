@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Game Checklist</title>
+<title>SFC Game Testing</title>
 
 <style>
     * {
@@ -21,7 +21,7 @@
     }
 
     .container {
-        max-width: 750px;
+        max-width: 850px;
         margin: auto;
     }
 
@@ -38,10 +38,7 @@
     }
 
     .game {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        padding: 15px 18px;
+        padding: 18px;
         border-bottom: 1px solid #333;
         transition: background 0.2s;
     }
@@ -52,6 +49,12 @@
 
     .game:hover {
         background: #282828;
+    }
+
+    .game-header {
+        display: flex;
+        align-items: center;
+        gap: 15px;
     }
 
     .game input[type="checkbox"] {
@@ -72,9 +75,29 @@
         text-decoration: underline;
     }
 
-    .game.completed a {
+    .game.completed .game-header a {
         color: #888;
         text-decoration: line-through;
+    }
+
+    .mini-notes {
+        margin-top: 12px;
+        width: 100%;
+        min-height: 65px;
+        resize: vertical;
+        background: #111;
+        color: white;
+        border: 1px solid #444;
+        border-radius: 8px;
+        padding: 10px;
+        font-family: Arial, sans-serif;
+    }
+
+    .mini-notes-label {
+        display: block;
+        margin-top: 14px;
+        font-size: 14px;
+        color: #aaa;
     }
 
     .notes-section,
@@ -97,7 +120,7 @@
         font-weight: normal;
     }
 
-    textarea,
+    #finalNotes,
     input[type="text"] {
         width: 100%;
         background: #111;
@@ -105,14 +128,18 @@
         border: 1px solid #444;
         border-radius: 8px;
         padding: 12px;
-        font-family: monospace;
         margin-top: 10px;
     }
 
-    textarea {
+    #finalNotes {
         min-height: 140px;
         resize: vertical;
         font-family: Arial, sans-serif;
+    }
+
+    #exportCode,
+    #importCode {
+        font-family: monospace;
     }
 
     button {
@@ -149,19 +176,19 @@
 
 <div class="container">
 
-    <h1>Game Checklist</h1>
+    <h1>SFC Game Testing</h1>
 
     <div class="game-list" id="gameList"></div>
 
     <div class="notes-section">
         <h2>
-            Notes
+            Final Notes
             <span class="optional">(Optional)</span>
         </h2>
 
         <textarea
-            id="notes"
-            placeholder="Write any optional notes here..."
+            id="finalNotes"
+            placeholder="Write your final optional notes here..."
         ></textarea>
     </div>
 
@@ -199,6 +226,7 @@
     </div>
 
 </div>
+
 
 <script>
 
@@ -286,16 +314,20 @@ const games = [
 ];
 
 
-const STORAGE_KEY = "gameChecklistData";
+const STORAGE_KEY = "sfcGameTestingData";
+
 
 let savedData = {
     checked: [],
-    notes: ""
+    finalNotes: "",
+    gameNotes: {}
 };
 
 
 function loadData() {
+
     try {
+
         const stored = localStorage.getItem(STORAGE_KEY);
 
         if (stored) {
@@ -306,57 +338,110 @@ function loadData() {
             savedData.checked = [];
         }
 
-        if (typeof savedData.notes !== "string") {
-            savedData.notes = "";
+        if (typeof savedData.finalNotes !== "string") {
+            savedData.finalNotes = "";
+        }
+
+        if (
+            !savedData.gameNotes ||
+            typeof savedData.gameNotes !== "object"
+        ) {
+            savedData.gameNotes = {};
         }
 
     } catch (error) {
-        console.error("Could not load saved data:", error);
+
+        console.error(
+            "Could not load saved data:",
+            error
+        );
+
     }
+
 }
 
 
 function saveData() {
+
     const checked = [];
+    const gameNotes = {};
 
-    document.querySelectorAll(".game-checkbox").forEach((checkbox) => {
-        if (checkbox.checked) {
-            checked.push(checkbox.dataset.game);
-        }
-    });
 
-    const data = {
+    document
+        .querySelectorAll(".game-checkbox")
+        .forEach((checkbox) => {
+
+            if (checkbox.checked) {
+                checked.push(checkbox.dataset.game);
+            }
+
+        });
+
+
+    document
+        .querySelectorAll(".mini-notes")
+        .forEach((textarea) => {
+
+            gameNotes[textarea.dataset.game] =
+                textarea.value;
+
+        });
+
+
+    savedData = {
         checked: checked,
-        notes: document.getElementById("notes").value
+        finalNotes:
+            document.getElementById("finalNotes").value,
+        gameNotes: gameNotes
     };
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
 
-    savedData = data;
+    localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(savedData)
+    );
+
 }
 
 
 function renderGames() {
 
-    const gameList = document.getElementById("gameList");
+    const gameList =
+        document.getElementById("gameList");
+
 
     gameList.innerHTML = "";
 
+
     games.forEach((game) => {
 
-        const gameRow = document.createElement("div");
+        const gameRow =
+            document.createElement("div");
+
         gameRow.className = "game";
 
-        const checkbox = document.createElement("input");
+
+        const gameHeader =
+            document.createElement("div");
+
+        gameHeader.className = "game-header";
+
+
+        const checkbox =
+            document.createElement("input");
+
         checkbox.type = "checkbox";
         checkbox.className = "game-checkbox";
         checkbox.dataset.game = game.name;
 
-        checkbox.checked = savedData.checked.includes(game.name);
+        checkbox.checked =
+            savedData.checked.includes(game.name);
+
 
         if (checkbox.checked) {
             gameRow.classList.add("completed");
         }
+
 
         checkbox.addEventListener("change", () => {
 
@@ -366,10 +451,12 @@ function renderGames() {
             );
 
             saveData();
+
         });
 
 
-        const link = document.createElement("a");
+        const link =
+            document.createElement("a");
 
         link.href = game.url;
         link.target = "_blank";
@@ -378,133 +465,247 @@ function renderGames() {
         link.textContent = game.name;
 
 
-        gameRow.appendChild(checkbox);
-        gameRow.appendChild(link);
+        const miniNotesLabel =
+            document.createElement("label");
+
+        miniNotesLabel.className =
+            "mini-notes-label";
+
+        miniNotesLabel.textContent =
+            "Mini Notes (Optional)";
+
+
+        const miniNotes =
+            document.createElement("textarea");
+
+        miniNotes.className = "mini-notes";
+
+        miniNotes.dataset.game = game.name;
+
+        miniNotes.placeholder =
+            "Write optional notes for this game...";
+
+        miniNotes.value =
+            savedData.gameNotes[game.name] || "";
+
+
+        miniNotes.addEventListener("input", () => {
+            saveData();
+        });
+
+
+        gameHeader.appendChild(checkbox);
+        gameHeader.appendChild(link);
+
+        gameRow.appendChild(gameHeader);
+        gameRow.appendChild(miniNotesLabel);
+        gameRow.appendChild(miniNotes);
 
         gameList.appendChild(gameRow);
+
     });
+
 }
 
 
-document.getElementById("notes").addEventListener("input", () => {
-    saveData();
-});
+document
+    .getElementById("finalNotes")
+    .addEventListener("input", () => {
+
+        saveData();
+
+    });
 
 
-document.getElementById("exportButton").addEventListener("click", async () => {
+document
+    .getElementById("exportButton")
+    .addEventListener("click", async () => {
 
-    saveData();
-
-    const exportData = {
-        checked: savedData.checked,
-        notes: savedData.notes
-    };
-
-    const code = btoa(
-        unescape(
-            encodeURIComponent(
-                JSON.stringify(exportData)
-            )
-        )
-    );
-
-    document.getElementById("exportCode").value = code;
-
-    try {
-
-        await navigator.clipboard.writeText(code);
-
-        document.getElementById("exportStatus").textContent =
-            "Export code copied to clipboard!";
-
-    } catch (error) {
-
-        document.getElementById("exportStatus").textContent =
-            "Export code generated. Copy it manually.";
-
-    }
-
-});
+        saveData();
 
 
-document.getElementById("importButton").addEventListener("click", () => {
+        const exportData = {
+            checked: savedData.checked,
+            finalNotes: savedData.finalNotes,
+            gameNotes: savedData.gameNotes
+        };
 
-    const code = document
-        .getElementById("importCode")
-        .value
-        .trim();
 
-    const status = document.getElementById("importStatus");
-
-    if (!code) {
-
-        status.textContent = "Please paste an export code first.";
-
-        return;
-    }
-
-    try {
-
-        const importedData = JSON.parse(
-            decodeURIComponent(
-                escape(
-                    atob(code)
+        const code = btoa(
+            unescape(
+                encodeURIComponent(
+                    JSON.stringify(exportData)
                 )
             )
         );
 
 
-        if (
-            !importedData ||
-            !Array.isArray(importedData.checked)
-        ) {
-            throw new Error("Invalid data");
+        document
+            .getElementById("exportCode")
+            .value = code;
+
+
+        try {
+
+            await navigator.clipboard.writeText(code);
+
+            document
+                .getElementById("exportStatus")
+                .textContent =
+                    "Export code copied to clipboard!";
+
+        } catch (error) {
+
+            document
+                .getElementById("exportStatus")
+                .textContent =
+                    "Export code generated. Copy it manually.";
+
+        }
+
+    });
+
+
+document
+    .getElementById("importButton")
+    .addEventListener("click", () => {
+
+        const code = document
+            .getElementById("importCode")
+            .value
+            .trim();
+
+
+        const status =
+            document.getElementById("importStatus");
+
+
+        if (!code) {
+
+            status.textContent =
+                "Please paste an export code first.";
+
+            return;
+
         }
 
 
-        savedData = {
-            checked: importedData.checked.filter((gameName) =>
-                games.some((game) => game.name === gameName)
-            ),
+        try {
 
-            notes:
-                typeof importedData.notes === "string"
-                    ? importedData.notes
-                    : ""
-        };
+            const importedData = JSON.parse(
 
+                decodeURIComponent(
 
-        localStorage.setItem(
-            STORAGE_KEY,
-            JSON.stringify(savedData)
-        );
+                    escape(
 
+                        atob(code)
 
-        document.getElementById("notes").value =
-            savedData.notes;
+                    )
+
+                )
+
+            );
 
 
-        renderGames();
+            if (
+                !importedData ||
+                !Array.isArray(importedData.checked)
+            ) {
+                throw new Error("Invalid data");
+            }
 
 
-        status.textContent =
-            "Import successful! Your games and notes were restored.";
+            const validCheckedGames =
+                importedData.checked.filter(
+                    (gameName) =>
 
-    } catch (error) {
+                        games.some(
+                            (game) =>
+                                game.name === gameName
+                        )
 
-        console.error(error);
+                );
 
-        status.textContent =
-            "Invalid import code.";
 
-    }
+            const validGameNotes = {};
 
-});
+
+            if (
+                importedData.gameNotes &&
+                typeof importedData.gameNotes === "object"
+            ) {
+
+                games.forEach((game) => {
+
+                    if (
+                        typeof importedData.gameNotes[
+                            game.name
+                        ] === "string"
+                    ) {
+
+                        validGameNotes[game.name] =
+                            importedData.gameNotes[
+                                game.name
+                            ];
+
+                    }
+
+                });
+
+            }
+
+
+            savedData = {
+                checked: validCheckedGames,
+
+                finalNotes:
+                    typeof importedData.finalNotes === "string"
+                        ? importedData.finalNotes
+                        : "",
+
+                gameNotes: validGameNotes
+            };
+
+
+            localStorage.setItem(
+                STORAGE_KEY,
+                JSON.stringify(savedData)
+            );
+
+
+            document
+                .getElementById("finalNotes")
+                .value =
+                    savedData.finalNotes;
+
+
+            renderGames();
+
+
+            status.textContent =
+                "Import successful! Games, mini notes, and final notes were restored.";
+
+
+        } catch (error) {
+
+            console.error(error);
+
+            status.textContent =
+                "Invalid import code.";
+
+        }
+
+    });
 
 
 loadData();
 
-document.getElementById("notes").value = savedData.notes;
+
+document
+    .getElementById("finalNotes")
+    .value =
+        savedData.finalNotes;
+
 
 renderGames();
 
